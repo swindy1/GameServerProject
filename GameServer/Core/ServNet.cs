@@ -61,7 +61,126 @@ namespace GameServer.Core
         //Accept回调
         public void AcceptCb(IAsyncResult ias)
         {
+            try
+            {
+                //客户端连接套接字
+                Socket socket = listenSocket.EndAccept(ias);
+                int index = GetIndex();
+                if (index < 0)
+                {
+                    socket.Close();
+                    Console.WriteLine("连接已满");
+                    return;
+                }
+                //分配连接
+                Conn conn = conns[index];
+                conn.Init(socket);
 
+                string address = conn.GetAddress();
+                Console.WriteLine("The Client Address is:" + address);
+                //异步接收数据
+                socket.BeginReceive(conn.readBuffer, conn.bufferCount, conn.BuffRemain(), SocketFlags.None, ReceiveCb, conn);
+
+
+                listenSocket.BeginAccept(AcceptCb, null);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("AcceptCb失败："+e.Message);
+            }
+
+        }
+
+
+        //回调
+        public void ReceiveCb(IAsyncResult ias)
+        {
+            Conn conn = (Conn)ias.AsyncState;
+            lock(conn)
+            {
+                try
+                {
+                    int count = conn.socket.EndReceive(ias);
+                    //接收到消息长度为0表示已经断开连接
+                    if(count<=0)
+                    {
+                        Console.WriteLine(conn.GetAddress()+"断开连接");
+                        conn.Close();
+                        return;
+                    }
+
+                    //缓冲区消息总长度增加
+                    conn.bufferCount = conn.bufferCount + count;
+                    //处理消息，分发
+                    ProcessData(conn);
+
+                    //继续接受
+                    conn.socket.BeginReceive(conn.readBuffer, conn.bufferCount, conn.BuffRemain(), SocketFlags.None, ReceiveCb, conn);
+
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(conn.GetAddress()+"接收消息失败:"+e.Message);
+                }
+            }
+        }
+
+
+        //处理数据
+        public void ProcessData(Conn conn)
+        {
+            //缓冲区的数据长度小于4字节，，不是完整的消息
+            if(conn.bufferCount<sizeof(Int32))
+            {
+                return;
+            }
+
+            //复制消息长度到lenBytes
+            Array.Copy(conn.readBuffer, conn.lenBytes, sizeof(Int32));
+            //获取数组内容获取消息长度
+            conn.msgLength = BitConverter.ToInt32(conn.lenBytes, 0);
+
+            //处理消息
+            string msg = System.Text.Encoding.UTF8.GetString(conn.readBuffer,0,conn.msgLength);
+            Console.WriteLine("收到消息："+msg);
+
+
+            //清除已经处理的消息
+            //未处理的消息长度
+            int count = conn.bufferCount - (sizeof(Int32) + conn.msgLength);
+            Array.Copy(conn.readBuffer, sizeof(Int32) + conn.msgLength, conn.readBuffer, 0, conn.bufferCount - count);
+
+            //重新设置bufferCount
+            conn.bufferCount = count;
+
+            //递归调用
+            if(conn.bufferCount>0)
+            {
+                ProcessData(conn);
+            }
+
+        }
+
+
+        //发送消息
+        public void Send(Conn conn,string msg)
+        {
+            //msg转为Byte数组
+            byte[] msgBytes = System.Text.Encoding.UTF8.GetBytes(msg);
+            //根据msgBytes数组的长度创建lenBytes数组
+            byte[] lenBytes = BitConverter.GetBytes(msgBytes.Length);
+            //拼接两个数组
+            byte[] sendMsg = lenBytes.Concat(msgBytes).ToArray();
+
+            try
+            {
+                //发送,无回调函数，不关心发送结果
+                conn.socket.BeginSend(sendMsg, 0, sendMsg.Length, SocketFlags.None, null, null);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("发送消息失败："+conn.GetAddress()+e.Message);
+            }
         }
 
         //获取连接索引

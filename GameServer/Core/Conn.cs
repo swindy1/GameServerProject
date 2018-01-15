@@ -16,7 +16,7 @@ namespace GameServer.Core
         public Socket socket;
 
         public byte[] readBuffer =null;
-
+        //缓冲区消息总长度
         public int bufferCount = 0;
         //消息长度
         public int msgLength = 0;
@@ -52,7 +52,7 @@ namespace GameServer.Core
         }
 
         //获取客户端地址
-        public string GetAdderss()
+        public string GetAddress()
         {
             if (!isUse)
                 return "Conn对象尚未启用";
