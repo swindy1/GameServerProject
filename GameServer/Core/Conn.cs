@@ -42,6 +42,8 @@ namespace GameServer.Core
             isUse = true;
             //该类作为对象池对象循环使用，每次初始化一些字段需要重新设置
             bufferCount = 0;
+            //设置心跳时间
+            lastTickTime = ServTime.GetTimeStamp();
         }
 
 

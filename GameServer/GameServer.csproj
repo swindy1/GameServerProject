@@ -47,6 +47,7 @@
     <Compile Include="Core\DataHelper.cs" />
     <Compile Include="Core\Player.cs" />
     <Compile Include="Core\ServNet.cs" />
+    <Compile Include="Core\ServTime.cs" />
     <Compile Include="Logic\PlayerData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

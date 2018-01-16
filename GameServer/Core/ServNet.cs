@@ -17,6 +17,10 @@ namespace GameServer.Core
         public Conn[] conns;
 
         public int maxCount=50;
+        //猪定时器
+        public System.Timers.Timer timer = new System.Timers.Timer(1000);
+        //心跳时间,180秒执行一次心跳
+        public long heartBeatTime = 180;
 
         public static ServNet instance = new ServNet();
 
@@ -34,6 +38,11 @@ namespace GameServer.Core
         //开启服务器
         public void Start(string host,int port)
         {
+            //定时器
+            timer.Elapsed += new System.Timers.ElapsedEventHandler(HanderMainTimer);
+            timer.AutoReset = false;
+            timer.Enabled = true;
+
             //创建连接池
             conns = new Conn[maxCount];
             for(int i=0;i<maxCount;i++)
@@ -55,6 +64,42 @@ namespace GameServer.Core
             listenSocket.BeginAccept(AcceptCb,null);
 
             Console.WriteLine("服务器启动");
+
+        }
+
+
+       //主定时器
+       public void HanderMainTimer(object sender,System.Timers.ElapsedEventArgs e)
+        {
+            //处理心跳
+            HeartBeat();
+            timer.Start();
+        }
+       
+        //处理心跳
+        public void HeartBeat()
+        {
+            Console.WriteLine("主定时器开始运行");
+
+            //当前时间戳
+            long timeNow = ServTime.GetTimeStamp();
+
+            for(int i=0;i<conns.Length;i++)
+            {
+                if(conns[i].isUse)
+                {
+                    //超过心跳时间
+                    if(timeNow-conns[i].lastTickTime>heartBeatTime)
+                    {
+                        Console.WriteLine("心跳引起连接断开"+conns[i].GetAddress());
+                        lock(conns[i])
+                        {
+                            conns[i].Close();
+                        }
+                    }
+                }
+            }
+
 
         }
 
