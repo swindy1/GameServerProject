@@ -17,10 +17,13 @@ namespace GameServer.Core
         public Conn[] conns;
 
         public int maxCount=50;
-        //猪定时器
+        //主定时器
         public System.Timers.Timer timer = new System.Timers.Timer(1000);
         //心跳时间,180秒执行一次心跳
         public long heartBeatTime = 180;
+
+        //应用协议,待定
+        public ProtocolBase proto;
 
         public static ServNet instance = new ServNet();
 
@@ -186,8 +189,12 @@ namespace GameServer.Core
             conn.msgLength = BitConverter.ToInt32(conn.lenBytes, 0);
 
             //处理消息
-            string msg = System.Text.Encoding.UTF8.GetString(conn.readBuffer,0,conn.msgLength);
-            Console.WriteLine("收到消息："+msg);
+            //string msg = System.Text.Encoding.UTF8.GetString(conn.readBuffer,0,conn.msgLength);
+            //Console.WriteLine("收到消息："+msg);
+
+            ProtocolBase protocol = proto.Decode(conn.readBuffer,sizeof(Int32),conn.msgLength);
+            HandleMsg(conn, protocol);
+
 
 
             //清除已经处理的消息
@@ -207,11 +214,29 @@ namespace GameServer.Core
         }
 
 
+        //处理消息
+        public void HandleMsg(Conn conn,ProtocolBase protoBase)
+        {
+            //这里调用的是ProtocolBytes的GetName
+            string name = protoBase.GetName();
+            if(name=="HeartBeat")
+            {
+                Console.WriteLine("收到消息"+name);
+                conn.lastTickTime = ServTime.GetTimeStamp();
+            }
+            Send(conn,protoBase);
+            //广播
+            //Broadcast(protoBase);
+
+        }
+
+
+
         //发送消息
-        public void Send(Conn conn,string msg)
+        public void Send(Conn conn,ProtocolBase protocol)
         {
             //msg转为Byte数组
-            byte[] msgBytes = System.Text.Encoding.UTF8.GetBytes(msg);
+            byte[] msgBytes = protocol.Encode();
             //根据msgBytes数组的长度创建lenBytes数组
             byte[] lenBytes = BitConverter.GetBytes(msgBytes.Length);
             //拼接两个数组
@@ -219,12 +244,25 @@ namespace GameServer.Core
 
             try
             {
-                //发送,无回调函数，不关心发送结果
                 conn.socket.BeginSend(sendMsg, 0, sendMsg.Length, SocketFlags.None, null, null);
             }
             catch(Exception e)
             {
-                Console.WriteLine("发送消息失败："+conn.GetAddress()+e.Message);
+                Console.WriteLine("发送消息失败"+e.Message);
+            }
+        }
+
+
+        //消息广播
+        public void Broadcast(ProtocolBase protocol)
+        {
+            for(int i=0;i<conns.Length; i++)
+            {
+                if (conns[i] == null)
+                    continue;
+                if (conns[i].isUse == false)
+                    continue;
+                Send(conns[i], protocol);
             }
         }
 
