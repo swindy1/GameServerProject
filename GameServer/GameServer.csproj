@@ -51,6 +51,7 @@
     <Compile Include="Core\ServNet.cs" />
     <Compile Include="Core\ServTime.cs" />
     <Compile Include="Logic\PlayerData.cs" />
+    <Compile Include="Logic\PlayerTempData.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Test\DataHelperTest.cs" />
