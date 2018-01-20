@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using GameServer.Logic;
+using System.Reflection;
 
 namespace GameServer.Core
 {
@@ -24,6 +26,12 @@ namespace GameServer.Core
 
         //应用协议,待定
         public ProtocolBase proto;
+        //角色事件处理对象
+        public HandlePlayerEvent handlePlayerEvent = new HandlePlayerEvent();
+        //连接消息处理对象
+        public HandleConnMsg handleConnMsg = new HandleConnMsg();
+        //角色消息处理对象
+        public HandlePlayerMsg handlePlayerMsg = new HandlePlayerMsg();
 
         public static ServNet instance = new ServNet();
 
@@ -217,6 +225,7 @@ namespace GameServer.Core
         //处理消息
         public void HandleMsg(Conn conn,ProtocolBase protoBase)
         {
+            /*
             //这里调用的是ProtocolBytes的GetName
             string name = protoBase.GetName();
             if(name=="HeartBeat")
@@ -225,8 +234,44 @@ namespace GameServer.Core
                 conn.lastTickTime = ServTime.GetTimeStamp();
             }
             Send(conn,protoBase);
-            //广播
-            //Broadcast(protoBase);
+           */
+
+
+            string name = protoBase.GetName();
+            string methodName = "Msg" + name;
+
+            //连接消息处理
+            if(conn.player==null||name=="HeartBeat"||name=="Logout")
+            {
+                //根据方法名称获取方法属性
+                MethodInfo methodInfo = handleConnMsg.GetType().GetMethod(methodName);
+                if(methodInfo==null)
+                {
+                    Console.WriteLine("HandMsg没有连接处理方法");
+                        return;
+                }
+                //方法参数
+                object[] objs = new object[] { conn, protoBase };
+                //调用方法
+                methodInfo.Invoke(handleConnMsg, objs);
+                Console.WriteLine("处理连接消息");
+            }
+            //角色消息处理
+            else
+            {
+                //根据方法名称获取方法属性
+                MethodInfo methodInfo = handlePlayerEvent.GetType().GetMethod(methodName);
+                if (methodInfo == null)
+                {
+                    Console.WriteLine("HandMsg没有处理角色方法");
+                    return;
+                }
+                //方法参数
+                object[] objs = new object[] { conn, protoBase };
+                //调用方法
+                methodInfo.Invoke(handlePlayerEvent, objs);
+                Console.WriteLine("处理角色消息");
+            }
 
         }
 

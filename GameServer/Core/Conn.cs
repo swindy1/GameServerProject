@@ -67,8 +67,8 @@ namespace GameServer.Core
                 return;
             if(player!=null)
             {
-                //玩家退出操作
-                ;
+                //确保玩家退出操作
+                player.Logout();
             }
 
             socket.Shutdown(SocketShutdown.Both);
