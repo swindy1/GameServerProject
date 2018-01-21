@@ -77,5 +77,12 @@ namespace GameServer.Core
             isUse = false;
             
         }
+
+
+        //发送协议
+        public void Send(ProtocolBase protoBase)
+        {
+            ServNet.Instance.Send(this, protoBase);
+        }
     }
 }

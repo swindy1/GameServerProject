@@ -62,6 +62,7 @@ namespace GameServer.Core
                     continue;
                 if (conns[i].player == null)
                     continue;
+                //根据是否存在相同id的角色判断是否已经登陆
                 if (conns[i].player.id == id)
                 {
                     //与连接的消息处理不在同一线程
