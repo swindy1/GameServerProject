@@ -53,6 +53,8 @@ namespace GameServer.Logic
 
             //返回协议给客户端
             conn.Send(protoBytes);
+            //测试用
+            //Console.WriteLine(protoBytes.GetDesc());
         }
 
 
@@ -84,6 +86,7 @@ namespace GameServer.Logic
 
             //将在线的该玩家踢下线
             ProtocolBytes protoLogout = new ProtocolBytes();
+            
             protoLogout.AddString("Logout");
             //如果踢下线失败
             if(!Player.KickOff(id,protoLogout))
@@ -92,7 +95,7 @@ namespace GameServer.Logic
                 conn.Send(protoBytes);
                 return;
             }
-
+            
             //获取玩家数据
             PlayerData playerData = DataHelper.Instance.GetPlayerData(id);
             //获取数据失败
@@ -113,6 +116,10 @@ namespace GameServer.Logic
             //登陆成功返回
             protoBytes.AddInt(1);
             conn.Send(protoBytes);
+
+            //测试用
+            //Console.WriteLine(protoBytes.GetDesc());
+
             return;
 
         }

@@ -41,7 +41,7 @@ namespace GameServer.Test
             //更改玩家数据
             pd.score = 20;
 
-            Player p = new Player();
+            Player p = new Player("swindy",null);
             p.id = "swindy";
             p.data = pd;
 

@@ -13,8 +13,8 @@ namespace GameServer
     {
         static void Main(string[] args)
         {
-            Test.DataHelperTest.ExecuteTest1();
-
+            //Test.DataHelperTest.ExecuteTest1();
+            Test.HandleMsgTest.ExecuteHandleMsgTest();
         }
     }
 }
